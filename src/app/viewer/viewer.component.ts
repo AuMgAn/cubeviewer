@@ -39,11 +39,6 @@ export class ViewerComponent implements OnInit {
 
     const scene = new THREE.Scene();
     
-    
-    const texture = new THREE.CubeTextureLoader().load(["textures/plast.png"]);
-    texture.mapping = THREE.CubeReflectionMapping;
-    this.material.envMap = texture;
-    
     const ambientLight = new THREE.AmbientLight(0xffffff, 2);
     scene.add(ambientLight);
     
