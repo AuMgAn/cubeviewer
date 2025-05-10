@@ -160,9 +160,32 @@ export class ViewerComponent implements OnInit {
 		      const color = new THREE.Color();
 
           for ( let i = 0; i < positionAttribute.count; i += 3 ) {
-		
+            const vectAB = new THREE.Vector3(
+              positionAttribute.getX(i+1) - positionAttribute.getX(i), 
+              positionAttribute.getY(i+1) - positionAttribute.getY(i), 
+              positionAttribute.getZ(i+1) - positionAttribute.getZ(i), 
+            )
+            const vectAC = new THREE.Vector3(
+              positionAttribute.getX(i+2) - positionAttribute.getX(i), 
+              positionAttribute.getY(i+2) - positionAttribute.getY(i), 
+              positionAttribute.getZ(i+2) - positionAttribute.getZ(i), 
+            )
+            const normal = vectAB.cross(vectAC)//.normalize()
+            
+            if (normal.x > 0) {
+              color.setRGB(1,0,0)
+            } else if (normal.x < 0) {
+              color.setRGB(1,0.3,0)
+            } else if (normal.y > 0) {
+              color.setRGB(1,1,1)
+            } else if (normal.y < 0) {
+              color.setRGB(1,1,0)
+            } else if (normal.z > 0) {
+              color.setRGB(0,1,0)
+            } else if (normal.z < 0) {
+              color.setRGB(0,0,1)
+            }
             //color.set(  * 0xffffff );
-            color.setHSL(i/positionAttribute.count, 1, 0.5)
             
             // define the same color for each vertex of a triangle
             
