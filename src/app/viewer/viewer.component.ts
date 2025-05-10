@@ -1,6 +1,7 @@
 import { Component, Input, OnInit } from '@angular/core';
 
 import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 
 @Component({
   selector: 'app-viewer',
@@ -37,7 +38,7 @@ export class ViewerComponent implements OnInit {
     }
 
     const scene = new THREE.Scene();
-
+    
     
     const texture = new THREE.CubeTextureLoader().load(["textures/plast.png"]);
     texture.mapping = THREE.CubeReflectionMapping;
@@ -53,8 +54,8 @@ export class ViewerComponent implements OnInit {
     scene.add(pointLight);
     
     let boxes = this.generateCube(this.size, scene)
-  
-
+    
+    
     const canvasSizes = {
       width: canvas.clientWidth,
       height: canvas.clientHeight,
@@ -66,9 +67,9 @@ export class ViewerComponent implements OnInit {
       0.001,
       1000
     );
-    var cameraDistance = Math.pow(this.size, 1.8)
-    camera.position.z = cameraDistance
+    camera.position.z = 15
     scene.add(camera);
+
     
     const light = new THREE.PointLight(0xffffff, 100)
     light.position.set(camera.position.x, camera.position.y, camera.position.z)
@@ -79,6 +80,9 @@ export class ViewerComponent implements OnInit {
     });
     renderer.setClearColor(0xe202020, 1);
     renderer.setSize(canvasSizes.width, canvasSizes.height);
+    
+    const controls = new OrbitControls(camera, renderer.domElement)
+    controls.minDistance = this.size/2*1.732*this.width + this.width/2
 
     window.addEventListener('resize', () => {
       canvasSizes.width = canvas.clientWidth;
@@ -97,32 +101,13 @@ export class ViewerComponent implements OnInit {
         scene.clear()
         scene.add(camera, light, pointLight, ambientLight)
         boxes = this.generateCube(this.size, scene)
-        cameraDistance = Math.pow(this.size, 1.8)
+        controls.minDistance = this.size/2*1.732*this.width + this.width/2
       }
     })
 
-    const clock = new THREE.Clock();
+    //const clock = new THREE.Clock();
 
     const animateGeometry = () => {
-      const elapsedTime = clock.getElapsedTime();
-
-      // Update animation objects
-      //camera.rotation.x = elapsedTime/3
-      //camera.rotation.y = elapsedTime/3
-      //camera.rotation.z = elapsedTime/3
-      //for (let slice of boxes) {
-      //  for (let row of slice) {
-      //    for (let box of row) {
-      //      box.rotation.x = elapsedTime/3
-      //      box.rotation.y = elapsedTime/3
-      //      box.rotation.z = elapsedTime/3
-      //    }
-      //  }
-      //}
-      camera.position.x = Math.sin(elapsedTime/3)*cameraDistance;
-      camera.position.y = Math.cos(elapsedTime/3)*cameraDistance;
-      //camera.position.z = Math.sin(elapsedTime/3)*cameraDistance;
-      camera.lookAt(new THREE.Vector3(0,0,0))
 
       light.position.set(camera.position.x, camera.position.y, camera.position.z)
       
