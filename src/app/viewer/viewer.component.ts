@@ -15,6 +15,7 @@ export class ViewerComponent implements OnInit {
   @Input() face = "g";
 
   width = 3;
+  keypressed = ""
 
   material : THREE.MeshPhongMaterial = new THREE.MeshPhongMaterial( {
     color: 0x808080,
@@ -27,6 +28,8 @@ export class ViewerComponent implements OnInit {
     vertexColors: true,
   } );
 
+  boxes : THREE.Mesh[][][] = []
+
   ngOnInit(): void {
     this.createThreeJsBox();
   }
@@ -37,7 +40,10 @@ export class ViewerComponent implements OnInit {
     if (!canvas) {
       return;
     }
-
+    document.addEventListener("keypress", (ev) => {
+      this.rotateSlice(ev)
+      this.keypressed = ev.key
+    })
     const scene = new THREE.Scene();
     
     const ambientLight = new THREE.AmbientLight(0xffffff, 2);
@@ -49,7 +55,7 @@ export class ViewerComponent implements OnInit {
     pointLight.position.z = 2;
     scene.add(pointLight);
     
-    let boxes = this.generateCube(this.size, scene)
+    this.boxes = this.generateCube(this.size, scene)
     
     
     const canvasSizes = {
@@ -93,10 +99,10 @@ export class ViewerComponent implements OnInit {
 
     const slider = document.getElementById("size-slider")
     slider!.addEventListener("change", () => {
-      if (boxes.length != this.size) {
+      if (this.boxes.length != this.size) {
         scene.clear()
         scene.add(camera, light, pointLight, ambientLight)
-        boxes = this.generateCube(this.size, scene)
+        this.boxes = this.generateCube(this.size, scene)
         controls.minDistance = this.size/2*1.732*this.width + this.width/2
       }
     })
@@ -132,6 +138,7 @@ export class ViewerComponent implements OnInit {
         
         for (var k = 0; k < size; k++) {
           if (i!=0 && j != 0 && k !=0 && i!=size-1 && j != size-1 && k !=size-1) {
+            intermediateArray2.push(new THREE.Mesh())
             continue
           }
           const xOffset = (this.width + padding) * (k - (size -1)/2)
@@ -188,7 +195,7 @@ export class ViewerComponent implements OnInit {
           cube.position.x = xOffset
           cube.position.y = yOffset
           cube.position.z = zOffset
-
+    
           intermediateArray2.push(cube)
           scene.add(cube)
         }
@@ -199,8 +206,83 @@ export class ViewerComponent implements OnInit {
   return idCubes
   }
 
-  rotateSlice(boxes: THREE.Mesh[][][], axis: string) {
-
+  rotateSlice(event: KeyboardEvent) {
+    const [rotMat, angle, ids] = this.getRotationMat(event)
+    for (let box of this.idsToBoxes(ids)) {
+      box.position.applyMatrix4(rotMat)
+      if (ids[0] >= 0) {
+        box.rotateZ(angle)
+      } else if (ids[1] >= 0) {
+        box.rotateY(angle)
+      } else if (ids[2] >= 0) {
+        box.rotateX(angle)
+      }
+    }
   }
 
+  private getRotationMat(event: KeyboardEvent) : [THREE.Matrix4, number, number[]] {
+    const mat = new THREE.Matrix4()
+    var angle = 0
+    var ids = [-1, -1, -1]
+    switch (event.key) {
+      case "f":
+        angle = -Math.PI/2
+        mat.makeRotationZ(angle)
+        ids = [this.size -1, -1, -1]
+        break
+      case "b":
+        angle = Math.PI/2
+        mat.makeRotationZ(angle)
+        ids = [0, -1, -1]
+        break
+      case "u":
+        angle = -Math.PI/2
+        mat.makeRotationY(angle)
+        ids = [-1, this.size-1, -1]
+        break
+      case "d":
+        angle = Math.PI/2
+        mat.makeRotationY(angle)
+        ids = [-1, 0, -1]
+        break
+      case "r":
+        angle = -Math.PI/2
+        mat.makeRotationX(angle)
+        ids = [-1, -1, this.size-1]
+        break
+      case "l":
+        angle = Math.PI/2
+        mat.makeRotationX(angle)
+        ids = [-1, -1, 0]
+        break
+    }
+    return [mat, angle, ids]
+  }
+
+  private idsToBoxes(ids : number[]) : THREE.Mesh[] {
+    let boxBuffer: THREE.Mesh[] = []
+    if (ids[0] >= 0) {
+
+      boxBuffer = this.boxes[ids[0]].flat()
+
+    } else if (ids[1] >= 0) {
+
+      for (let slice of this.boxes) {
+        for (let box of slice[ids[1]]) {
+          boxBuffer.push(box)
+        }
+      }
+
+    } else if (ids[2] >= 0) {
+
+      for (let slice of this.boxes) {
+        for (let row of slice) {
+          boxBuffer.push(row[2])
+        }
+      }
+
+    }
+
+    return boxBuffer
+  }
 }
