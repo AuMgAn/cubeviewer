@@ -12,7 +12,7 @@ export class ViewerComponent implements OnInit {
 
   @Input() size = 3;
 
-  width = 15;
+  width = 3;
 
   material : THREE.MeshPhongMaterial = new THREE.MeshPhongMaterial( {
     color: 0x808080,
@@ -22,6 +22,7 @@ export class ViewerComponent implements OnInit {
     reflectivity: 0.1,
     refractionRatio: 0.1,
     combine: THREE.MultiplyOperation,
+    vertexColors: true,
   } );
 
   ngOnInit(): void {
@@ -42,12 +43,12 @@ export class ViewerComponent implements OnInit {
     texture.mapping = THREE.CubeReflectionMapping;
     this.material.envMap = texture;
     
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 2);
     scene.add(ambientLight);
     
-    const pointLight = new THREE.PointLight(0xffffff, 0.5);
+    const pointLight = new THREE.PointLight(0xffffff, 500);
     pointLight.position.x = 2;
-    pointLight.position.y = 2;
+    pointLight.position.y = this.size*this.width*2
     pointLight.position.z = 2;
     scene.add(pointLight);
     
@@ -65,10 +66,11 @@ export class ViewerComponent implements OnInit {
       0.001,
       1000
     );
-    camera.position.z = 50;
+    var cameraDistance = Math.pow(this.size, 1.8)
+    camera.position.z = cameraDistance
     scene.add(camera);
     
-    const light = new THREE.PointLight(0xffffff, 2500)
+    const light = new THREE.PointLight(0xffffff, 100)
     light.position.set(camera.position.x, camera.position.y, camera.position.z)
     scene.add(light)
     
@@ -89,9 +91,13 @@ export class ViewerComponent implements OnInit {
       renderer.render(scene, camera);
     });
 
-    window.addEventListener("mouseover", () => {
+    const slider = document.getElementById("size-slider")
+    slider!.addEventListener("change", () => {
       if (boxes.length != this.size) {
+        scene.clear()
+        scene.add(camera, light, pointLight, ambientLight)
         boxes = this.generateCube(this.size, scene)
+        cameraDistance = Math.pow(this.size, 1.8)
       }
     })
 
@@ -113,9 +119,9 @@ export class ViewerComponent implements OnInit {
       //    }
       //  }
       //}
-      camera.position.x = Math.sin(elapsedTime/3)*50;
-      camera.position.y = Math.cos(elapsedTime/3)*50;
-      camera.position.z = Math.sin(elapsedTime/3)*50;
+      camera.position.x = Math.sin(elapsedTime/3)*cameraDistance;
+      camera.position.y = Math.cos(elapsedTime/3)*cameraDistance;
+      //camera.position.z = Math.sin(elapsedTime/3)*cameraDistance;
       camera.lookAt(new THREE.Vector3(0,0,0))
 
       light.position.set(camera.position.x, camera.position.y, camera.position.z)
@@ -132,15 +138,15 @@ export class ViewerComponent implements OnInit {
 
   generateCube(size: number, scene: THREE.Scene) {
 
-    const idCubes : THREE.Mesh<THREE.BoxGeometry, THREE.MeshPhongMaterial, THREE.Object3DEventMap>[][][] = []
-    const padding = 0.3
+    const idCubes : THREE.Mesh[][][] = []
+    const padding = this.width/50
 
     for (var i = 0; i < size; i++) {
-      let intermediateArray1  : THREE.Mesh<THREE.BoxGeometry, THREE.MeshPhongMaterial, THREE.Object3DEventMap>[][] = []
+      let intermediateArray1  : THREE.Mesh[][] = []
       const zOffset = (this.width + padding) * (i - (size -1)/2)
 
       for (var j = 0; j < size; j++) {
-        let intermediateArray2  : THREE.Mesh<THREE.BoxGeometry, THREE.MeshPhongMaterial, THREE.Object3DEventMap>[] = []
+        let intermediateArray2  : THREE.Mesh[] = []
         const yOffset = (this.width + padding) * (j - (size -1)/2)
         
         for (var k = 0; k < size; k++) {
@@ -148,8 +154,30 @@ export class ViewerComponent implements OnInit {
             continue
           }
           const xOffset = (this.width + padding) * (k - (size -1)/2)
+          let geom = new THREE.BoxGeometry(this.width, this.width, this.width).toNonIndexed()
+          const positionAttribute = geom.getAttribute("position")
+          const colors = [];
+		      const color = new THREE.Color();
+
+          for ( let i = 0; i < positionAttribute.count; i += 3 ) {
+		
+            //color.set(  * 0xffffff );
+            color.setHSL(i/positionAttribute.count, 1, 0.5)
+            
+            // define the same color for each vertex of a triangle
+            
+            colors.push( color.r, color.g, color.b );
+            colors.push( color.r, color.g, color.b );
+            colors.push( color.r, color.g, color.b );
+          
+          }
+          
+          // define the new attribute
+          
+          geom.setAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3 ) );
+
           let cube = new THREE.Mesh(
-            new THREE.BoxGeometry(this.width, this.width, this.width), 
+            geom, 
             this.material,
           )
           cube.position.x = xOffset
