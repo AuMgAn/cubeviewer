@@ -159,33 +159,34 @@ export class ViewerComponent implements OnInit {
           const colors = [];
 		      const color = new THREE.Color();
 
-          for ( let i = 0; i < positionAttribute.count; i += 3 ) {
+          for ( let m = 0; m < positionAttribute.count; m += 3 ) {
             const vectAB = new THREE.Vector3(
-              positionAttribute.getX(i+1) - positionAttribute.getX(i), 
-              positionAttribute.getY(i+1) - positionAttribute.getY(i), 
-              positionAttribute.getZ(i+1) - positionAttribute.getZ(i), 
+              positionAttribute.getX(m+1) - positionAttribute.getX(m), 
+              positionAttribute.getY(m+1) - positionAttribute.getY(m), 
+              positionAttribute.getZ(m+1) - positionAttribute.getZ(m), 
             )
             const vectAC = new THREE.Vector3(
-              positionAttribute.getX(i+2) - positionAttribute.getX(i), 
-              positionAttribute.getY(i+2) - positionAttribute.getY(i), 
-              positionAttribute.getZ(i+2) - positionAttribute.getZ(i), 
+              positionAttribute.getX(m+2) - positionAttribute.getX(m), 
+              positionAttribute.getY(m+2) - positionAttribute.getY(m), 
+              positionAttribute.getZ(m+2) - positionAttribute.getZ(m), 
             )
             const normal = vectAB.cross(vectAC)//.normalize()
             
-            if (normal.x > 0) {
+            if (normal.x > 0 && k == size-1) {
               color.setRGB(1,0,0)
-            } else if (normal.x < 0) {
+            } else if (normal.x < 0 && k == 0) {
               color.setRGB(1,0.3,0)
-            } else if (normal.y > 0) {
+            } else if (normal.y > 0 && j == size -1) {
               color.setRGB(1,1,1)
-            } else if (normal.y < 0) {
+            } else if (normal.y < 0 && j==0) {
               color.setRGB(1,1,0)
-            } else if (normal.z > 0) {
+            } else if (normal.z > 0 && i == size - 1) {
               color.setRGB(0,1,0)
-            } else if (normal.z < 0) {
+            } else if (normal.z < 0 && i == 0) {
               color.setRGB(0,0,1)
+            } else {
+              color.setRGB(0, 0, 0)
             }
-            //color.set(  * 0xffffff );
             
             // define the same color for each vertex of a triangle
             
