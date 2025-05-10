@@ -7,11 +7,12 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
   selector: 'app-viewer',
   imports: [],
   templateUrl: './viewer.component.html',
-  styleUrl: './viewer.component.css'
+  styleUrl: './viewer.component.scss'
 })
 export class ViewerComponent implements OnInit {
 
   @Input() size = 3;
+  @Input() face = "g";
 
   width = 3;
 
@@ -196,6 +197,10 @@ export class ViewerComponent implements OnInit {
       idCubes.push(intermediateArray1)
     }
   return idCubes
+  }
+
+  rotateSlice(boxes: THREE.Mesh[][][], axis: string) {
+
   }
 
 }
