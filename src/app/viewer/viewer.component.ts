@@ -1,7 +1,9 @@
 import { Component, Input, OnInit } from '@angular/core';
+import { of } from 'rxjs';
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
+import { lerp } from 'three/src/math/MathUtils.js';
 
 @Component({
   selector: 'app-viewer',
@@ -13,9 +15,13 @@ export class ViewerComponent implements OnInit {
 
   @Input() size = 3;
   @Input() face = "g";
+  @Input() rorationSpeed = 0.1; //s
 
   width = 3;
   keypressed = ""
+  internClock = new THREE.Clock(false)
+  animationBuffer : THREE.Mesh[][] = []
+  keyEventBuffer : KeyboardEvent[] = []
 
   material : THREE.MeshPhongMaterial = new THREE.MeshPhongMaterial( {
     color: 0x808080,
@@ -41,8 +47,12 @@ export class ViewerComponent implements OnInit {
       return;
     }
     document.addEventListener("keypress", (ev) => {
-      this.rotateSlice(ev)
-      this.keypressed = ev.key
+      
+      if (["u","d","f","b","r","l","m","s","e"].indexOf(ev.key.toLowerCase(), 0) != -1) {
+        this.keyEventBuffer.push(ev)
+        this.animationBuffer.push(this.idsToBoxes(this.getSlice(ev)))
+        this.updateKeypress(ev)
+      }
     })
     const scene = new THREE.Scene();
     
@@ -85,6 +95,8 @@ export class ViewerComponent implements OnInit {
     
     const controls = new OrbitControls(camera, renderer.domElement)
     controls.minDistance = this.size/2*1.732*this.width + this.width/2
+    controls.maxPolarAngle = Math.PI*2
+    controls.minPolarAngle = -Math.PI*2
 
     window.addEventListener('resize', () => {
       canvasSizes.width = canvas.clientWidth;
@@ -112,6 +124,8 @@ export class ViewerComponent implements OnInit {
     const animateGeometry = () => {
 
       light.position.set(camera.position.x, camera.position.y, camera.position.z)
+
+      this.animateRotation(this.animationBuffer, this.keyEventBuffer)
       
       // Render
       renderer.render(scene, camera);
@@ -206,57 +220,87 @@ export class ViewerComponent implements OnInit {
   return idCubes
   }
 
-  rotateSlice(event: KeyboardEvent) {
-    const [rotMat, angle, ids] = this.getRotationMat(event)
-    for (let box of this.idsToBoxes(ids)) {
+  rotateSlice(slice : THREE.Mesh[], event: KeyboardEvent, time: number = 1) {
+    const [rotMat, angle] = this.getRotationMat(event, time)
+    for (let box of slice) {
       box.position.applyMatrix4(rotMat)
-      if (ids[0] >= 0) {
-        box.rotateZ(angle)
-      } else if (ids[1] >= 0) {
+      if (rotMat.elements[0] != 1){
         box.rotateY(angle)
-      } else if (ids[2] >= 0) {
+      } else if (rotMat.elements[5] != 1) {
         box.rotateX(angle)
+      } else if(rotMat.elements[10] != 1) {
+        box.rotateY(angle)
       }
-    }
+      }
   }
 
-  private getRotationMat(event: KeyboardEvent) : [THREE.Matrix4, number, number[]] {
+  private getSlice(event : KeyboardEvent) : number[] {
+    switch (event.key.toLowerCase()) {
+      case "f":
+        return [this.size -1, -1, -1]
+      case "b":
+        return [0, -1, -1]
+      case "u":
+        return [-1, this.size-1, -1]
+      case "d":
+        return [-1, 0, -1]
+      case "r":
+        return [-1, -1, this.size-1]
+      case "l":
+        return [-1, -1, 0]
+      case "m":
+        return [-1, -1, 1]
+      case "e":
+        return [-1, 1, -1]
+      case "s":
+        return [1, -1, -1]
+    }
+    return [-1, -1, -1]
+  }
+
+  private getRotationMat(event: KeyboardEvent, time: number = 1) : [THREE.Matrix4, number] {
     const mat = new THREE.Matrix4()
     var angle = 0
-    var ids = [-1, -1, -1]
-    switch (event.key) {
+    const factor = event.shiftKey ? -1 : 1
+    switch (event.key.toLowerCase()) {
       case "f":
-        angle = -Math.PI/2
+        angle = -Math.PI/2* factor* time
         mat.makeRotationZ(angle)
-        ids = [this.size -1, -1, -1]
         break
       case "b":
-        angle = Math.PI/2
+        angle = Math.PI/2* factor* time
         mat.makeRotationZ(angle)
-        ids = [0, -1, -1]
         break
       case "u":
-        angle = -Math.PI/2
+        angle = -Math.PI/2* factor* time
         mat.makeRotationY(angle)
-        ids = [-1, this.size-1, -1]
         break
       case "d":
-        angle = Math.PI/2
+        angle = Math.PI/2* factor* time
         mat.makeRotationY(angle)
-        ids = [-1, 0, -1]
         break
       case "r":
-        angle = -Math.PI/2
+        angle = -Math.PI/2* factor* time
         mat.makeRotationX(angle)
-        ids = [-1, -1, this.size-1]
         break
       case "l":
-        angle = Math.PI/2
+        angle = Math.PI/2* factor* time
         mat.makeRotationX(angle)
-        ids = [-1, -1, 0]
+        break
+      case "m":
+        angle = Math.PI/2* factor* time
+        mat.makeRotationX(angle)
+        break
+      case "e":
+        angle = Math.PI/2* factor* time
+        mat.makeRotationY(angle)
+        break
+      case "s":
+        angle = -Math.PI/2* factor* time
+        mat.makeRotationZ(angle)
         break
     }
-    return [mat, angle, ids]
+    return [mat, angle]
   }
 
   private idsToBoxes(ids : number[]) : THREE.Mesh[] {
@@ -277,12 +321,177 @@ export class ViewerComponent implements OnInit {
 
       for (let slice of this.boxes) {
         for (let row of slice) {
-          boxBuffer.push(row[2])
+          boxBuffer.push(row[ids[2]])
         }
       }
 
     }
 
     return boxBuffer
+  }
+
+  private clampVec3(vec3 : THREE.Vector3) {
+    const offsets : number[]= []
+    for (let i = 0; i < this.size; i++) {
+      offsets.push(this.width + this.width/50) * (i - (this.size -1)/2)
+    }
+    const closer = [9999999, 9999999 , 9999999]
+    for (let off of offsets) {
+      if (Math.abs(vec3.x - off) < closer[0]) {
+        closer[0] = off
+      }
+      if (Math.abs(vec3.y - off) < closer[1]) {
+        closer[1] = off
+      }
+      if (Math.abs(vec3.z - off) < closer[2]) {
+        closer[2] = off
+      }
+    }
+    vec3.fromArray(closer)
+  }
+
+  private clampRotation(rot : THREE.Euler) {
+    const closer = [9999999, 9999999 , 9999999]
+    for (let cardinal of [0, Math.PI/2, Math.PI, -Math.PI/2, -Math.PI]) {
+      if (Math.abs(rot.x - cardinal) < closer[0]) {
+        closer[0] = cardinal
+      }
+      if (Math.abs(rot.y - cardinal) < closer[1]) {
+        closer[1] = cardinal
+      }
+      if (Math.abs(rot.z - cardinal) < closer[2]) {
+        closer[2] = cardinal
+      }
+    }
+    rot.x = closer[0]
+    rot.y = closer[1]
+    rot.z = closer[2]
+  }
+
+  private sortBoxes() {
+    const flatBoxes = this.boxes.flat().flat()
+    flatBoxes.forEach((box) => {
+      this.clampVec3(box.position)
+      this.clampRotation(box.rotation)})
+    flatBoxes.sort((a : THREE.Mesh, b : THREE.Mesh) : number =>  {
+      //1st -z -y -x  
+      return 10000*(a.position.z - b.position.z) + 100*(a.position.y - b.position.y) + (a.position.x - b.position.x)
+    })
+    for (let i = 0; i < this.size; i++) {
+      for (let j = 0; j < this.size; j++) {
+        for (let k = 0; k < this.size; k++) {
+          const zOffset = (this.width + this.width/50) * (i - (this.size -1)/2)
+          const yOffset = (this.width + this.width/50) * (j - (this.size -1)/2)
+          const xOffset = (this.width + this.width/50) * (k - (this.size -1)/2)
+          this.boxes[i][j][k] = flatBoxes[i*this.size*this.size + j*this.size + k]
+          this.boxes[i][j][k].position.x = xOffset
+          this.boxes[i][j][k].position.y = yOffset
+          this.boxes[i][j][k].position.z = zOffset
+        }
+      }
+    }
+  }
+
+  private updateKeypress(event : KeyboardEvent) {
+    const eventKey = event.key.toLowerCase()
+    if (["u","d","f","b","r","l","m","s","e"].indexOf(eventKey, 0) != -1) {
+      this.keypressed += eventKey.toUpperCase()
+      if (event.ctrlKey) {
+        this.keypressed += "w"
+      }
+      if (event.shiftKey) {
+        this.keypressed += "'"
+      } 
+    }
+    var keyBuffer = ""
+    // RR -> R2 ; R2R -> R' ; R'R' -> R2; R2R' -> R; RR' -> ; R'R -> ;
+    for (let k = 0; k < this.keypressed.length; k++) {
+      if (k == this.keypressed.length - 1) {
+        keyBuffer += this.keypressed[k]
+        continue
+      }
+      var offset = 0
+      // R'...
+      if (this.keypressed[k+1] == "'") {
+        offset ++
+        if (this.keypressed[k] == this.keypressed[k+offset+1]) {
+          offset++
+          if (this.keypressed[k+offset+1] == "'") {
+            // R'R' -> R2
+            offset++
+            keyBuffer += this.keypressed[k] + "2"
+          } else  {
+            // R'R -> 
+            keyBuffer += ""
+          }
+
+        } else {
+          // R'
+          keyBuffer += this.keypressed[k] + "'"
+        }
+
+      // R2 ...
+      } else if (this.keypressed[k+1] == "2") {
+        offset++
+        if (this.keypressed[k+offset+1] == this.keypressed[k]) {
+          offset++
+          if (this.keypressed[k+offset+1] == "'") {
+            // R2R' -> R
+            offset++
+            keyBuffer += this.keypressed[k]
+          } else {
+            // R2R -> R'
+            keyBuffer += this.keypressed[k] + "'"
+          }
+
+        } else {
+          // R2
+          keyBuffer += this.keypressed[k] + "2"
+        }
+
+      // RR ...
+      } else if (this.keypressed[k] == this.keypressed[k+1]) {
+        offset++
+        if (this.keypressed[k+offset+1] == "'") {
+          // RR' ->
+          offset++
+          keyBuffer += ""
+        } else {
+          // RR -> R2
+          keyBuffer += this.keypressed[k] + "2"
+        }
+      
+      // Rw ...
+      } else if (this.keypressed[k+1] == "w") {
+        offset++
+      } else {
+        // R
+        keyBuffer += this.keypressed[k]
+      }
+      k += offset
+    }
+    this.keypressed = keyBuffer
+  }
+
+  private animateRotation(slices : THREE.Mesh[][], events : KeyboardEvent[]) {
+    if (slices.length == 0) {
+      return
+    }
+    if (this.internClock.elapsedTime/this.rorationSpeed >= 1) {
+      this.internClock.stop()
+      this.internClock.running = false
+      this.internClock.elapsedTime = 0
+      this.sortBoxes()
+      slices.splice(0,1)
+      events.splice(0,1)
+      return
+    }
+    if (!this.internClock.running) {
+      this.internClock.start()
+    }
+
+    this.rotateSlice(slices[0], events[0], this.internClock.getDelta()/this.rorationSpeed)
+
+    
   }
 }

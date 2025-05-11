@@ -15,7 +15,8 @@ export class AppComponent{
   sides = [2, 3, 4, 5, 6, 7, 8];
   colors = ["green", "blue", "white", "yellow", "red", "orange"]
   selectedSide = 3;
-  face = "green"
+  face = "green";
+  speed = 0.1;
 
   updateFace(newFace: string) {
     this.face = newFace
