@@ -12,7 +12,7 @@ import { FormsModule } from '@angular/forms'
 export class AppComponent{
   
   title = 'cubeviewer';
-  sides = [2, 3, 4, 5, 6, 7, 8];
+  sides = [2, 3];//, 4, 5, 6, 7, 8];
   colors = ["green", "blue", "white", "yellow", "red", "orange"]
   selectedSide = 3;
   face = "green";
