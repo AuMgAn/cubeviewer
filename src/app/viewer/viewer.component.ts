@@ -1,5 +1,5 @@
 import { Component, Input, OnInit } from '@angular/core';
-import { of } from 'rxjs';
+import { of, timeout } from 'rxjs';
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
@@ -20,8 +20,8 @@ export class ViewerComponent implements OnInit {
   width = 3;
   keypressed = ""
   internClock = new THREE.Clock(false)
-  animationBuffer : THREE.Mesh[][] = []
   keyEventBuffer : KeyboardEvent[] = []
+  rotatingBoxes : THREE.Mesh[] = []
 
   material : THREE.MeshPhongMaterial = new THREE.MeshPhongMaterial( {
     color: 0x808080,
@@ -39,18 +39,18 @@ export class ViewerComponent implements OnInit {
   ngOnInit(): void {
     this.createThreeJsBox();
   }
-
+  
   createThreeJsBox(): void {
     const canvas = document.getElementById('canvas-box');
     
     if (!canvas) {
       return;
     }
+    const clock = new THREE.Clock();
+    
     document.addEventListener("keypress", (ev) => {
-      
       if (["u","d","f","b","r","l","m","s","e"].indexOf(ev.key.toLowerCase(), 0) != -1) {
         this.keyEventBuffer.push(ev)
-        this.animationBuffer.push(this.idsToBoxes(this.getSlice(ev)))
         this.updateKeypress(ev)
       }
     })
@@ -119,13 +119,12 @@ export class ViewerComponent implements OnInit {
       }
     })
 
-    //const clock = new THREE.Clock();
 
     const animateGeometry = () => {
 
       light.position.set(camera.position.x, camera.position.y, camera.position.z)
 
-      this.animateRotation(this.animationBuffer, this.keyEventBuffer)
+      this.animateRotation(this.keyEventBuffer)
       
       // Render
       renderer.render(scene, camera);
@@ -220,16 +219,16 @@ export class ViewerComponent implements OnInit {
   return idCubes
   }
 
-  rotateSlice(slice : THREE.Mesh[], event: KeyboardEvent, time: number = 1) {
+  rotateSlice(event: KeyboardEvent, time: number = 1) {
     const [rotMat, angle] = this.getRotationMat(event, time)
-    for (let box of slice) {
+    for (let box of this.rotatingBoxes) {
       box.position.applyMatrix4(rotMat)
-      if (rotMat.elements[0] != 1){
-        box.rotateY(angle)
+      if (rotMat.elements[0] != 1 && rotMat.elements[10] == 1){
+        box.rotateOnWorldAxis(new THREE.Vector3(0, 0, 1), angle)
       } else if (rotMat.elements[5] != 1) {
-        box.rotateX(angle)
+        box.rotateOnWorldAxis(new THREE.Vector3(1, 0, 0), angle)
       } else if(rotMat.elements[10] != 1) {
-        box.rotateY(angle)
+        box.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), angle)
       }
       }
   }
@@ -333,33 +332,35 @@ export class ViewerComponent implements OnInit {
   private clampVec3(vec3 : THREE.Vector3) {
     const offsets : number[]= []
     for (let i = 0; i < this.size; i++) {
-      offsets.push(this.width + this.width/50) * (i - (this.size -1)/2)
+      offsets.push((this.width + this.width/50) * (i - (this.size -1)/2))
     }
     const closer = [9999999, 9999999 , 9999999]
     for (let off of offsets) {
-      if (Math.abs(vec3.x - off) < closer[0]) {
+      if (Math.abs(vec3.x - off) < Math.abs(vec3.x - closer[0])) {
         closer[0] = off
       }
-      if (Math.abs(vec3.y - off) < closer[1]) {
+      if (Math.abs(vec3.y - off) < Math.abs(vec3.y - closer[1])) {
         closer[1] = off
       }
-      if (Math.abs(vec3.z - off) < closer[2]) {
+      if (Math.abs(vec3.z - off) < Math.abs(vec3.z - closer[2])) {
         closer[2] = off
       }
     }
-    vec3.fromArray(closer)
+    vec3.x = closer[0]
+    vec3.y = closer[1]
+    vec3.z = closer[2]
   }
 
   private clampRotation(rot : THREE.Euler) {
     const closer = [9999999, 9999999 , 9999999]
     for (let cardinal of [0, Math.PI/2, Math.PI, -Math.PI/2, -Math.PI]) {
-      if (Math.abs(rot.x - cardinal) < closer[0]) {
+      if (Math.abs(rot.x - cardinal) < Math.abs(rot.x - closer[0])) {
         closer[0] = cardinal
       }
-      if (Math.abs(rot.y - cardinal) < closer[1]) {
+      if (Math.abs(rot.y - cardinal) < Math.abs(rot.y - closer[1])) {
         closer[1] = cardinal
       }
-      if (Math.abs(rot.z - cardinal) < closer[2]) {
+      if (Math.abs(rot.z - cardinal) < Math.abs(rot.z - closer[2])) {
         closer[2] = cardinal
       }
     }
@@ -380,13 +381,7 @@ export class ViewerComponent implements OnInit {
     for (let i = 0; i < this.size; i++) {
       for (let j = 0; j < this.size; j++) {
         for (let k = 0; k < this.size; k++) {
-          const zOffset = (this.width + this.width/50) * (i - (this.size -1)/2)
-          const yOffset = (this.width + this.width/50) * (j - (this.size -1)/2)
-          const xOffset = (this.width + this.width/50) * (k - (this.size -1)/2)
           this.boxes[i][j][k] = flatBoxes[i*this.size*this.size + j*this.size + k]
-          this.boxes[i][j][k].position.x = xOffset
-          this.boxes[i][j][k].position.y = yOffset
-          this.boxes[i][j][k].position.z = zOffset
         }
       }
     }
@@ -473,24 +468,24 @@ export class ViewerComponent implements OnInit {
     this.keypressed = keyBuffer
   }
 
-  private animateRotation(slices : THREE.Mesh[][], events : KeyboardEvent[]) {
-    if (slices.length == 0) {
+  private animateRotation(events : KeyboardEvent[]) {
+    if (events.length == 0) {
       return
     }
-    if (this.internClock.elapsedTime/this.rorationSpeed >= 1) {
+    if (this.internClock.elapsedTime/this.rorationSpeed > 1) {
       this.internClock.stop()
       this.internClock.running = false
       this.internClock.elapsedTime = 0
-      this.sortBoxes()
-      slices.splice(0,1)
       events.splice(0,1)
+      this.sortBoxes()
       return
     }
     if (!this.internClock.running) {
       this.internClock.start()
+      this.rotatingBoxes = this.idsToBoxes(this.getSlice(events[0]))
     }
 
-    this.rotateSlice(slices[0], events[0], this.internClock.getDelta()/this.rorationSpeed)
+    this.rotateSlice(events[0], this.internClock.getDelta()/this.rorationSpeed)
 
     
   }
