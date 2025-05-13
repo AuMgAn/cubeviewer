@@ -16,6 +16,7 @@ export class AppComponent {
 	selectedSide = 3;
 	face = "green";
 	speed = 0.1;
+	algorithm = "";
 
 	updateFace(newFace: string) {
 		this.face = newFace;

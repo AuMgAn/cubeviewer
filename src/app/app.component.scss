@@ -7,7 +7,15 @@ datalist {
     flex-direction: column;
     justify-content: space-between;
     writing-mode: vertical-lr;
-  }
+}
+
+button {
+    background-color: #0075FF;
+    height: inherit;
+    margin-top: 5px;
+    padding: 8px 16px;
+    border-radius: 15px;
+}
 
 .head {
     width: 100%;

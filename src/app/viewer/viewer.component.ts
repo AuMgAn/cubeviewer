@@ -3,6 +3,8 @@ import { Component, Input, type OnInit } from "@angular/core";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
+import { type KeyEvent, KeyService } from "../key-service.service";
+
 @Component({
 	selector: "app-viewer",
 	imports: [],
@@ -15,9 +17,8 @@ export class ViewerComponent implements OnInit {
 	@Input() rorationSpeed = 0.1; //s
 
 	width = 3;
-	keyPressed = "";
+	keys = new KeyService();
 	internClock = new THREE.Clock(false);
-	keyEventBuffer: KeyboardEvent[] = [];
 	rotatingBoxes: THREE.Mesh[] = [];
 
 	material: THREE.MeshPhongMaterial = new THREE.MeshPhongMaterial({
@@ -39,6 +40,10 @@ export class ViewerComponent implements OnInit {
 
 	createThreeJsBox(): void {
 		const canvas = document.getElementById("canvas-box");
+		document.getElementById("reset-button")?.addEventListener("click", () => {
+			this.keys.reset();
+			this.createThreeJsBox();
+		});
 
 		if (!canvas) {
 			return;
@@ -51,8 +56,7 @@ export class ViewerComponent implements OnInit {
 					0,
 				) !== -1
 			) {
-				this.keyEventBuffer.push(ev);
-				this.updateKeypress(ev);
+				this.keys.updateKeypress(ev);
 			}
 		});
 		const scene = new THREE.Scene();
@@ -127,7 +131,7 @@ export class ViewerComponent implements OnInit {
 				camera.position.z,
 			);
 
-			this.animateRotation(this.keyEventBuffer);
+			this.animateRotation(this.keys.keyEventBuffer);
 
 			// Render
 			renderer.render(scene, camera);
@@ -231,7 +235,7 @@ export class ViewerComponent implements OnInit {
 		return idCubes;
 	}
 
-	rotateSlice(event: KeyboardEvent, time = 1) {
+	rotateSlice(event: KeyEvent, time = 1) {
 		const [rotMat, angle] = this.getRotationMat(event, time);
 		for (const box of this.rotatingBoxes) {
 			box.position.applyMatrix4(rotMat);
@@ -245,7 +249,7 @@ export class ViewerComponent implements OnInit {
 		}
 	}
 
-	private getSlice(event: KeyboardEvent): number[] {
+	private getSlice(event: KeyEvent): number[] {
 		switch (event.key.toLowerCase()) {
 			case "f":
 				return [this.size - 1, -1, -1];
@@ -269,13 +273,10 @@ export class ViewerComponent implements OnInit {
 		return [-1, -1, -1];
 	}
 
-	private getRotationMat(
-		event: KeyboardEvent,
-		time = 1,
-	): [THREE.Matrix4, number] {
+	private getRotationMat(event: KeyEvent, time = 1): [THREE.Matrix4, number] {
 		const mat = new THREE.Matrix4();
 		let angle = 0;
-		const factor = event.shiftKey ? -1 : 1;
+		const factor = event.shift ? -1 : 1;
 		switch (event.key.toLowerCase()) {
 			case "f":
 				angle = (-Math.PI / 2) * factor * time;
@@ -402,88 +403,7 @@ export class ViewerComponent implements OnInit {
 		}
 	}
 
-	private updateKeypress(event: KeyboardEvent) {
-		const eventKey = event.key.toLowerCase();
-		if (
-			["u", "d", "f", "b", "r", "l", "m", "s", "e"].indexOf(eventKey, 0) !== -1
-		) {
-			this.keyPressed += eventKey.toUpperCase();
-			if (event.ctrlKey) {
-				this.keyPressed += "w";
-			}
-			if (event.shiftKey) {
-				this.keyPressed += "'";
-			}
-		}
-		let keyBuffer = "";
-		// RR -> R2 ; R2R -> R' ; R'R' -> R2; R2R' -> R; RR' -> ; R'R -> ;
-		for (let k = 0; k < this.keyPressed.length; k++) {
-			if (k === this.keyPressed.length - 1) {
-				keyBuffer += this.keyPressed[k];
-				continue;
-			}
-			let offset = 0;
-			// R'...
-			if (this.keyPressed[k + 1] === "'") {
-				offset++;
-				if (this.keyPressed[k] === this.keyPressed[k + offset + 1]) {
-					offset++;
-					if (this.keyPressed[k + offset + 1] === "'") {
-						// R'R' -> R2
-						offset++;
-						keyBuffer += `${this.keyPressed[k]}2`;
-					} else {
-						// R'R ->
-						keyBuffer += "";
-					}
-				} else {
-					// R'
-					keyBuffer += `${this.keyPressed[k]}'`;
-				}
-
-				// R2 ...
-			} else if (this.keyPressed[k + 1] === "2") {
-				offset++;
-				if (this.keyPressed[k + offset + 1] === this.keyPressed[k]) {
-					offset++;
-					if (this.keyPressed[k + offset + 1] === "'") {
-						// R2R' -> R
-						offset++;
-						keyBuffer += this.keyPressed[k];
-					} else {
-						// R2R -> R'
-						keyBuffer += `${this.keyPressed[k]}'`;
-					}
-				} else {
-					// R2
-					keyBuffer += `${this.keyPressed[k]}2`;
-				}
-
-				// RR ...
-			} else if (this.keyPressed[k] === this.keyPressed[k + 1]) {
-				offset++;
-				if (this.keyPressed[k + offset + 1] === "'") {
-					// RR' ->
-					offset++;
-					keyBuffer += "";
-				} else {
-					// RR -> R2
-					keyBuffer += `${this.keyPressed[k]}2`;
-				}
-
-				// Rw ...
-			} else if (this.keyPressed[k + 1] === "w") {
-				offset++;
-			} else {
-				// R
-				keyBuffer += this.keyPressed[k];
-			}
-			k += offset;
-		}
-		this.keyPressed = keyBuffer;
-	}
-
-	private animateRotation(events: KeyboardEvent[]) {
+	private animateRotation(events: KeyEvent[]) {
 		if (events.length === 0) {
 			return;
 		}
