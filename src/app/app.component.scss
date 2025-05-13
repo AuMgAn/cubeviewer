@@ -11,7 +11,7 @@ datalist {
 
 .head {
     width: 100%;
-    height: 5%;
+    height: 30px;
     background-color: steelblue;
 }
 
@@ -23,6 +23,7 @@ datalist {
 .params {
     margin: 5px;
     padding: 10px;
+    width: 150px;
     height: fit-content;
 }
 
