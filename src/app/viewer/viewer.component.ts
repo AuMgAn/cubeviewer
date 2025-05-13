@@ -15,6 +15,7 @@ export class ViewerComponent implements OnInit {
 	@Input() size = 3;
 	@Input() face = "g";
 	@Input() rorationSpeed = 0.1; //s
+	@Input() algorithm: KeyEvent[] = [];
 
 	width = 3;
 	keys = new KeyService();
@@ -39,6 +40,10 @@ export class ViewerComponent implements OnInit {
 		document.getElementById("reset-button")?.addEventListener("click", () => {
 			this.keys.reset();
 			this.createThreeJsBox();
+		});
+
+		document.getElementById("apply-algo")?.addEventListener("click", () => {
+			this.keys.keyEventBuffer.push(...this.algorithm);
 		});
 		document.addEventListener("keypress", (ev) => {
 			if (

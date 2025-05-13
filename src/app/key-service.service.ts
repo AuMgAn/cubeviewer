@@ -44,12 +44,16 @@ export class KeyService {
 			this.keyPressed += "'";
 		}
 		this.keyEventBuffer.push(eventKey);
+		this.formatKeys();
+	}
+
+	private formatKeys() {
 		let keyBuffer = "";
 		// RR -> R2 ; R2R -> R' ; R'R' -> R2; R2R' -> R; RR' -> ; R'R -> ;
 		for (let k = 0; k < this.keyPressed.length; k++) {
 			if (k === this.keyPressed.length - 1) {
 				keyBuffer += this.keyPressed[k];
-				continue;
+				break;
 			}
 			let offset = 0;
 			// R'...
@@ -110,5 +114,43 @@ export class KeyService {
 			k += offset;
 		}
 		this.keyPressed = keyBuffer;
+	}
+
+	static Algo2KeyEvents(algo: string): KeyEvent[] {
+		const keyEventBuffer: KeyEvent[] = [];
+		for (let i = 0; i < algo.length; i++) {
+			if (i === algo.length - 1) {
+				keyEventBuffer.push({
+					key: algo[i].toLowerCase(),
+					shift: false,
+				});
+				break;
+			}
+
+			if (algo[i + 1] === "'") {
+				keyEventBuffer.push({
+					key: algo[i].toLowerCase(),
+					shift: true,
+				});
+				i++;
+			} else if (algo[i + 1] === "2") {
+				keyEventBuffer.push({
+					key: algo[i].toLowerCase(),
+					shift: false,
+				});
+				keyEventBuffer.push({
+					key: algo[i].toLowerCase(),
+					shift: false,
+				});
+				i++;
+			} else if (algo[i] !== " ") {
+				keyEventBuffer.push({
+					key: algo[i].toLowerCase(),
+					shift: false,
+				});
+			}
+		}
+
+		return keyEventBuffer;
 	}
 }

@@ -30,8 +30,9 @@
     <hr>
 
     <label for="side">Algorithm input : </label>
-    <input type="text" [(ngModel)]="algorithm"/>
-    <button>Apply</button>
+    <textarea [(ngModel)]="rawAlgorithm" (change)="setAlgorithm()"class="algorithm-input">
+    </textarea>
+    <button id="apply-algo">Apply</button>
     <hr>
 
     <button id="reset-button">Reset</button>
@@ -40,7 +41,7 @@
   </div>
 
   <div class="viewer">
-    <app-viewer [size]="selectedSide" [face]="face[0]" [rorationSpeed]="speed"></app-viewer>
+    <app-viewer [size]="selectedSide" [face]="face[0]" [rorationSpeed]="speed" [algorithm]="algorithm"></app-viewer>
   </div>
 
 </div>
