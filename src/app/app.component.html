@@ -1,4 +1,11 @@
-<div class="head" id="class">Head</div>
+<div class="head" id="class">
+  <b class="github-link">
+    <a href="https://github.com/AuMgAn/cubeviewer" style="width: inherit; height: inherit;">
+      <img src="github-mark.png" alt="github" class="github-logo">
+    </a>
+    CubeViewer
+  </b>
+</div>
 
 <div class="app">
 
@@ -18,13 +25,23 @@
       <hr>
     </section>
 
+    <label for="side">Rotation speed : </label>
     <input type="range" min="0.1" max="1" step="0.1" [(ngModel)]="speed"/>
+    <hr>
+
+    <label for="side">Algorithm input : </label>
+    <textarea [(ngModel)]="rawAlgorithm" (change)="setAlgorithm()"class="algorithm-input">
+    </textarea>
+    <button id="apply-algo">Apply</button>
+    <hr>
+
+    <button id="reset-button">Reset</button>
     <hr>
 
   </div>
 
   <div class="viewer">
-    <app-viewer [size]="selectedSide" [face]="face[0]" [rorationSpeed]="speed"></app-viewer>
+    <app-viewer [size]="selectedSide" [face]="face[0]" [rorationSpeed]="speed" [algorithm]="algorithm"></app-viewer>
   </div>
 
 </div>

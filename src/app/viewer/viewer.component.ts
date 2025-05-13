@@ -3,6 +3,8 @@ import { Component, Input, type OnInit } from "@angular/core";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
+import { type KeyEvent, KeyService } from "../key-service.service";
+
 @Component({
 	selector: "app-viewer",
 	imports: [],
@@ -13,11 +15,12 @@ export class ViewerComponent implements OnInit {
 	@Input() size = 3;
 	@Input() face = "g";
 	@Input() rorationSpeed = 0.1; //s
+	@Input() algorithm: KeyEvent[] = [];
 
 	width = 3;
-	keyPressed = "";
+	keys = new KeyService();
+	currentEvent: KeyEvent | undefined = undefined;
 	internClock = new THREE.Clock(false);
-	keyEventBuffer: KeyboardEvent[] = [];
 	rotatingBoxes: THREE.Mesh[] = [];
 
 	material: THREE.MeshPhongMaterial = new THREE.MeshPhongMaterial({
@@ -34,6 +37,25 @@ export class ViewerComponent implements OnInit {
 	boxes: THREE.Mesh[][][] = [];
 
 	ngOnInit(): void {
+		document.getElementById("reset-button")?.addEventListener("click", () => {
+			this.keys.reset();
+			this.createThreeJsBox();
+		});
+
+		document.getElementById("apply-algo")?.addEventListener("click", () => {
+			this.keys.keyEventBuffer.push(...this.algorithm);
+		});
+		document.addEventListener("keypress", (ev) => {
+			if (
+				["u", "d", "f", "b", "r", "l", "m", "s", "e"].indexOf(
+					ev.key.toLowerCase(),
+					0,
+				) !== -1
+			) {
+				this.keys.updateKeypress(ev);
+			}
+		});
+
 		this.createThreeJsBox();
 	}
 
@@ -44,17 +66,6 @@ export class ViewerComponent implements OnInit {
 			return;
 		}
 
-		document.addEventListener("keypress", (ev) => {
-			if (
-				["u", "d", "f", "b", "r", "l", "m", "s", "e"].indexOf(
-					ev.key.toLowerCase(),
-					0,
-				) !== -1
-			) {
-				this.keyEventBuffer.push(ev);
-				this.updateKeypress(ev);
-			}
-		});
 		const scene = new THREE.Scene();
 
 		const ambientLight = new THREE.AmbientLight(0xffffff, 2);
@@ -109,17 +120,6 @@ export class ViewerComponent implements OnInit {
 			renderer.render(scene, camera);
 		});
 
-		const slider = document.getElementById("size-slider");
-		slider?.addEventListener("change", () => {
-			if (this.boxes.length !== this.size) {
-				scene.clear();
-				scene.add(camera, light, pointLight, ambientLight);
-				this.boxes = this.generateCube(this.size, scene);
-				controls.minDistance =
-					(this.size / 2) * 1.732 * this.width + this.width / 2;
-			}
-		});
-
 		const animateGeometry = () => {
 			light.position.set(
 				camera.position.x,
@@ -127,7 +127,7 @@ export class ViewerComponent implements OnInit {
 				camera.position.z,
 			);
 
-			this.animateRotation(this.keyEventBuffer);
+			this.animateRotation();
 
 			// Render
 			renderer.render(scene, camera);
@@ -231,8 +231,8 @@ export class ViewerComponent implements OnInit {
 		return idCubes;
 	}
 
-	rotateSlice(event: KeyboardEvent, time = 1) {
-		const [rotMat, angle] = this.getRotationMat(event, time);
+	rotateSlice(time = 1) {
+		const [rotMat, angle] = this.getRotationMat(time);
 		for (const box of this.rotatingBoxes) {
 			box.position.applyMatrix4(rotMat);
 			if (rotMat.elements[0] !== 1 && rotMat.elements[10] === 1) {
@@ -245,8 +245,8 @@ export class ViewerComponent implements OnInit {
 		}
 	}
 
-	private getSlice(event: KeyboardEvent): number[] {
-		switch (event.key.toLowerCase()) {
+	private getSlice(): number[] {
+		switch (this.currentEvent?.key) {
 			case "f":
 				return [this.size - 1, -1, -1];
 			case "b":
@@ -269,14 +269,11 @@ export class ViewerComponent implements OnInit {
 		return [-1, -1, -1];
 	}
 
-	private getRotationMat(
-		event: KeyboardEvent,
-		time = 1,
-	): [THREE.Matrix4, number] {
+	private getRotationMat(time = 1): [THREE.Matrix4, number] {
 		const mat = new THREE.Matrix4();
 		let angle = 0;
-		const factor = event.shiftKey ? -1 : 1;
-		switch (event.key.toLowerCase()) {
+		const factor = this.currentEvent?.shift ? -1 : 1;
+		switch (this.currentEvent?.key) {
 			case "f":
 				angle = (-Math.PI / 2) * factor * time;
 				mat.makeRotationZ(angle);
@@ -402,107 +399,23 @@ export class ViewerComponent implements OnInit {
 		}
 	}
 
-	private updateKeypress(event: KeyboardEvent) {
-		const eventKey = event.key.toLowerCase();
-		if (
-			["u", "d", "f", "b", "r", "l", "m", "s", "e"].indexOf(eventKey, 0) !== -1
-		) {
-			this.keyPressed += eventKey.toUpperCase();
-			if (event.ctrlKey) {
-				this.keyPressed += "w";
-			}
-			if (event.shiftKey) {
-				this.keyPressed += "'";
-			}
-		}
-		let keyBuffer = "";
-		// RR -> R2 ; R2R -> R' ; R'R' -> R2; R2R' -> R; RR' -> ; R'R -> ;
-		for (let k = 0; k < this.keyPressed.length; k++) {
-			if (k === this.keyPressed.length - 1) {
-				keyBuffer += this.keyPressed[k];
-				continue;
-			}
-			let offset = 0;
-			// R'...
-			if (this.keyPressed[k + 1] === "'") {
-				offset++;
-				if (this.keyPressed[k] === this.keyPressed[k + offset + 1]) {
-					offset++;
-					if (this.keyPressed[k + offset + 1] === "'") {
-						// R'R' -> R2
-						offset++;
-						keyBuffer += `${this.keyPressed[k]}2`;
-					} else {
-						// R'R ->
-						keyBuffer += "";
-					}
-				} else {
-					// R'
-					keyBuffer += `${this.keyPressed[k]}'`;
-				}
-
-				// R2 ...
-			} else if (this.keyPressed[k + 1] === "2") {
-				offset++;
-				if (this.keyPressed[k + offset + 1] === this.keyPressed[k]) {
-					offset++;
-					if (this.keyPressed[k + offset + 1] === "'") {
-						// R2R' -> R
-						offset++;
-						keyBuffer += this.keyPressed[k];
-					} else {
-						// R2R -> R'
-						keyBuffer += `${this.keyPressed[k]}'`;
-					}
-				} else {
-					// R2
-					keyBuffer += `${this.keyPressed[k]}2`;
-				}
-
-				// RR ...
-			} else if (this.keyPressed[k] === this.keyPressed[k + 1]) {
-				offset++;
-				if (this.keyPressed[k + offset + 1] === "'") {
-					// RR' ->
-					offset++;
-					keyBuffer += "";
-				} else {
-					// RR -> R2
-					keyBuffer += `${this.keyPressed[k]}2`;
-				}
-
-				// Rw ...
-			} else if (this.keyPressed[k + 1] === "w") {
-				offset++;
-			} else {
-				// R
-				keyBuffer += this.keyPressed[k];
-			}
-			k += offset;
-		}
-		this.keyPressed = keyBuffer;
-	}
-
-	private animateRotation(events: KeyboardEvent[]) {
-		if (events.length === 0) {
+	private animateRotation() {
+		if (this.keys.isEmpty() && !this.currentEvent) {
 			return;
 		}
 		if (this.internClock.elapsedTime / this.rorationSpeed > 1) {
 			this.internClock.stop();
 			this.internClock.running = false;
 			this.internClock.elapsedTime = 0;
-			events.splice(0, 1);
 			this.sortBoxes();
 			return;
 		}
 		if (!this.internClock.running) {
 			this.internClock.start();
-			this.rotatingBoxes = this.idsToBoxes(this.getSlice(events[0]));
+			this.currentEvent = this.keys.pop();
+			this.rotatingBoxes = this.idsToBoxes(this.getSlice());
 		}
 
-		this.rotateSlice(
-			events[0],
-			this.internClock.getDelta() / this.rorationSpeed,
-		);
+		this.rotateSlice(this.internClock.getDelta() / this.rorationSpeed);
 	}
 }
