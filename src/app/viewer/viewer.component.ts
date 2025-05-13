@@ -15,7 +15,7 @@ export class ViewerComponent implements OnInit {
 	@Input() rorationSpeed = 0.1; //s
 
 	width = 3;
-	keypressed = "";
+	keyPressed = "";
 	internClock = new THREE.Clock(false);
 	keyEventBuffer: KeyboardEvent[] = [];
 	rotatingBoxes: THREE.Mesh[] = [];
@@ -407,80 +407,80 @@ export class ViewerComponent implements OnInit {
 		if (
 			["u", "d", "f", "b", "r", "l", "m", "s", "e"].indexOf(eventKey, 0) !== -1
 		) {
-			this.keypressed += eventKey.toUpperCase();
+			this.keyPressed += eventKey.toUpperCase();
 			if (event.ctrlKey) {
-				this.keypressed += "w";
+				this.keyPressed += "w";
 			}
 			if (event.shiftKey) {
-				this.keypressed += "'";
+				this.keyPressed += "'";
 			}
 		}
 		let keyBuffer = "";
 		// RR -> R2 ; R2R -> R' ; R'R' -> R2; R2R' -> R; RR' -> ; R'R -> ;
-		for (let k = 0; k < this.keypressed.length; k++) {
-			if (k === this.keypressed.length - 1) {
-				keyBuffer += this.keypressed[k];
+		for (let k = 0; k < this.keyPressed.length; k++) {
+			if (k === this.keyPressed.length - 1) {
+				keyBuffer += this.keyPressed[k];
 				continue;
 			}
 			let offset = 0;
 			// R'...
-			if (this.keypressed[k + 1] === "'") {
+			if (this.keyPressed[k + 1] === "'") {
 				offset++;
-				if (this.keypressed[k] === this.keypressed[k + offset + 1]) {
+				if (this.keyPressed[k] === this.keyPressed[k + offset + 1]) {
 					offset++;
-					if (this.keypressed[k + offset + 1] === "'") {
+					if (this.keyPressed[k + offset + 1] === "'") {
 						// R'R' -> R2
 						offset++;
-						keyBuffer += `${this.keypressed[k]}2`;
+						keyBuffer += `${this.keyPressed[k]}2`;
 					} else {
 						// R'R ->
 						keyBuffer += "";
 					}
 				} else {
 					// R'
-					keyBuffer += `${this.keypressed[k]}'`;
+					keyBuffer += `${this.keyPressed[k]}'`;
 				}
 
 				// R2 ...
-			} else if (this.keypressed[k + 1] === "2") {
+			} else if (this.keyPressed[k + 1] === "2") {
 				offset++;
-				if (this.keypressed[k + offset + 1] === this.keypressed[k]) {
+				if (this.keyPressed[k + offset + 1] === this.keyPressed[k]) {
 					offset++;
-					if (this.keypressed[k + offset + 1] === "'") {
+					if (this.keyPressed[k + offset + 1] === "'") {
 						// R2R' -> R
 						offset++;
-						keyBuffer += this.keypressed[k];
+						keyBuffer += this.keyPressed[k];
 					} else {
 						// R2R -> R'
-						keyBuffer += `${this.keypressed[k]}'`;
+						keyBuffer += `${this.keyPressed[k]}'`;
 					}
 				} else {
 					// R2
-					keyBuffer += `${this.keypressed[k]}2`;
+					keyBuffer += `${this.keyPressed[k]}2`;
 				}
 
 				// RR ...
-			} else if (this.keypressed[k] === this.keypressed[k + 1]) {
+			} else if (this.keyPressed[k] === this.keyPressed[k + 1]) {
 				offset++;
-				if (this.keypressed[k + offset + 1] === "'") {
+				if (this.keyPressed[k + offset + 1] === "'") {
 					// RR' ->
 					offset++;
 					keyBuffer += "";
 				} else {
 					// RR -> R2
-					keyBuffer += `${this.keypressed[k]}2`;
+					keyBuffer += `${this.keyPressed[k]}2`;
 				}
 
 				// Rw ...
-			} else if (this.keypressed[k + 1] === "w") {
+			} else if (this.keyPressed[k + 1] === "w") {
 				offset++;
 			} else {
 				// R
-				keyBuffer += this.keypressed[k];
+				keyBuffer += this.keyPressed[k];
 			}
 			k += offset;
 		}
-		this.keypressed = keyBuffer;
+		this.keyPressed = keyBuffer;
 	}
 
 	private animateRotation(events: KeyboardEvent[]) {
