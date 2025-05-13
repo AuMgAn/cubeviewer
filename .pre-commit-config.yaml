@@ -1,22 +1,23 @@
-repos: 
+repos:
   -   repo: https://github.com/pre-commit/pre-commit-hooks
       rev: v5.0.0  # Use the ref you want to point at
       hooks:
       -   id: trailing-whitespace
       # -   id: ...
 
-  -   repo: https://github.com/pre-commit/mirrors-scss-lint
-      rev: ''  # Use the sha / tag you want to point at
-      hooks:
-      -   id: scss-lint
-
-  - repo: https://github.com/biomejs/pre-commit
-    rev: v2.0.0-beta.3 # Use the sha / tag you want to point at
+  - repo: local
     hooks:
-      - id: biome-check
+      - id: local-biome-check
+        name: biome check
+        entry: npx biome check --write --files-ignore-unknown=true --no-errors-on-unmatched
+        language: system
+        types: [text]
+        files: "src/app/*"
+
 
   - repo: local
     hooks:
       - id: post-build
         name: post-build angular
+        language: system
         entry: python post-build.py
