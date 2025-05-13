@@ -14,6 +14,20 @@ export class KeyService {
 
 	reset() {
 		this.keyPressed = "";
+		this.keyEventBuffer = [];
+	}
+
+	isEmpty(): boolean {
+		return this.keyEventBuffer.length === 0;
+	}
+
+	pop(): KeyEvent | undefined {
+		if (this.isEmpty()) {
+			return undefined;
+		}
+		const value = this.keyEventBuffer[0];
+		this.keyEventBuffer.splice(0, 1);
+		return value;
 	}
 
 	private keyboardEvent2KeyEvent(ev: KeyboardEvent): KeyEvent {
@@ -25,16 +39,11 @@ export class KeyService {
 
 	updateKeypress(event: KeyboardEvent) {
 		const eventKey = this.keyboardEvent2KeyEvent(event);
-		if (
-			["u", "d", "f", "b", "r", "l", "m", "s", "e"].indexOf(eventKey.key, 0) !==
-			-1
-		) {
-			this.keyPressed += eventKey.key.toUpperCase();
-			if (eventKey.shift) {
-				this.keyPressed += "'";
-			}
-			this.keyEventBuffer.push(eventKey);
+		this.keyPressed += eventKey.key.toUpperCase();
+		if (eventKey.shift) {
+			this.keyPressed += "'";
 		}
+		this.keyEventBuffer.push(eventKey);
 		let keyBuffer = "";
 		// RR -> R2 ; R2R -> R' ; R'R' -> R2; R2R' -> R; RR' -> ; R'R -> ;
 		for (let k = 0; k < this.keyPressed.length; k++) {

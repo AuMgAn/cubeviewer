@@ -18,6 +18,7 @@ export class ViewerComponent implements OnInit {
 
 	width = 3;
 	keys = new KeyService();
+	currentEvent: KeyEvent | undefined = undefined;
 	internClock = new THREE.Clock(false);
 	rotatingBoxes: THREE.Mesh[] = [];
 
@@ -35,20 +36,10 @@ export class ViewerComponent implements OnInit {
 	boxes: THREE.Mesh[][][] = [];
 
 	ngOnInit(): void {
-		this.createThreeJsBox();
-	}
-
-	createThreeJsBox(): void {
-		const canvas = document.getElementById("canvas-box");
 		document.getElementById("reset-button")?.addEventListener("click", () => {
 			this.keys.reset();
 			this.createThreeJsBox();
 		});
-
-		if (!canvas) {
-			return;
-		}
-
 		document.addEventListener("keypress", (ev) => {
 			if (
 				["u", "d", "f", "b", "r", "l", "m", "s", "e"].indexOf(
@@ -59,6 +50,17 @@ export class ViewerComponent implements OnInit {
 				this.keys.updateKeypress(ev);
 			}
 		});
+
+		this.createThreeJsBox();
+	}
+
+	createThreeJsBox(): void {
+		const canvas = document.getElementById("canvas-box");
+
+		if (!canvas) {
+			return;
+		}
+
 		const scene = new THREE.Scene();
 
 		const ambientLight = new THREE.AmbientLight(0xffffff, 2);
@@ -113,17 +115,6 @@ export class ViewerComponent implements OnInit {
 			renderer.render(scene, camera);
 		});
 
-		const slider = document.getElementById("size-slider");
-		slider?.addEventListener("change", () => {
-			if (this.boxes.length !== this.size) {
-				scene.clear();
-				scene.add(camera, light, pointLight, ambientLight);
-				this.boxes = this.generateCube(this.size, scene);
-				controls.minDistance =
-					(this.size / 2) * 1.732 * this.width + this.width / 2;
-			}
-		});
-
 		const animateGeometry = () => {
 			light.position.set(
 				camera.position.x,
@@ -131,7 +122,7 @@ export class ViewerComponent implements OnInit {
 				camera.position.z,
 			);
 
-			this.animateRotation(this.keys.keyEventBuffer);
+			this.animateRotation();
 
 			// Render
 			renderer.render(scene, camera);
@@ -235,8 +226,8 @@ export class ViewerComponent implements OnInit {
 		return idCubes;
 	}
 
-	rotateSlice(event: KeyEvent, time = 1) {
-		const [rotMat, angle] = this.getRotationMat(event, time);
+	rotateSlice(time = 1) {
+		const [rotMat, angle] = this.getRotationMat(time);
 		for (const box of this.rotatingBoxes) {
 			box.position.applyMatrix4(rotMat);
 			if (rotMat.elements[0] !== 1 && rotMat.elements[10] === 1) {
@@ -249,8 +240,8 @@ export class ViewerComponent implements OnInit {
 		}
 	}
 
-	private getSlice(event: KeyEvent): number[] {
-		switch (event.key.toLowerCase()) {
+	private getSlice(): number[] {
+		switch (this.currentEvent?.key) {
 			case "f":
 				return [this.size - 1, -1, -1];
 			case "b":
@@ -273,11 +264,11 @@ export class ViewerComponent implements OnInit {
 		return [-1, -1, -1];
 	}
 
-	private getRotationMat(event: KeyEvent, time = 1): [THREE.Matrix4, number] {
+	private getRotationMat(time = 1): [THREE.Matrix4, number] {
 		const mat = new THREE.Matrix4();
 		let angle = 0;
-		const factor = event.shift ? -1 : 1;
-		switch (event.key.toLowerCase()) {
+		const factor = this.currentEvent?.shift ? -1 : 1;
+		switch (this.currentEvent?.key) {
 			case "f":
 				angle = (-Math.PI / 2) * factor * time;
 				mat.makeRotationZ(angle);
@@ -403,26 +394,23 @@ export class ViewerComponent implements OnInit {
 		}
 	}
 
-	private animateRotation(events: KeyEvent[]) {
-		if (events.length === 0) {
+	private animateRotation() {
+		if (this.keys.isEmpty() && !this.currentEvent) {
 			return;
 		}
 		if (this.internClock.elapsedTime / this.rorationSpeed > 1) {
 			this.internClock.stop();
 			this.internClock.running = false;
 			this.internClock.elapsedTime = 0;
-			events.splice(0, 1);
 			this.sortBoxes();
 			return;
 		}
 		if (!this.internClock.running) {
 			this.internClock.start();
-			this.rotatingBoxes = this.idsToBoxes(this.getSlice(events[0]));
+			this.currentEvent = this.keys.pop();
+			this.rotatingBoxes = this.idsToBoxes(this.getSlice());
 		}
 
-		this.rotateSlice(
-			events[0],
-			this.internClock.getDelta() / this.rorationSpeed,
-		);
+		this.rotateSlice(this.internClock.getDelta() / this.rorationSpeed);
 	}
 }
