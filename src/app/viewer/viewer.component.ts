@@ -1,9 +1,7 @@
 import { Component, Input, type OnInit } from "@angular/core";
-import { of, timeout } from "rxjs";
 
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { lerp } from "three/src/math/MathUtils.js";
 
 @Component({
 	selector: "app-viewer",
@@ -45,7 +43,6 @@ export class ViewerComponent implements OnInit {
 		if (!canvas) {
 			return;
 		}
-		const clock = new THREE.Clock();
 
 		document.addEventListener("keypress", (ev) => {
 			if (
@@ -102,8 +99,8 @@ export class ViewerComponent implements OnInit {
 		controls.minPolarAngle = -Math.PI * 2;
 
 		window.addEventListener("resize", () => {
-			canvasSizes.width = canvas.clientWidth;
-			canvasSizes.height = canvas.clientHeight;
+			canvasSizes.width = window.innerWidth - 200;
+			canvasSizes.height = window.innerHeight - 100;
 
 			camera.aspect = canvasSizes.width / canvasSizes.height;
 			camera.updateProjectionMatrix();

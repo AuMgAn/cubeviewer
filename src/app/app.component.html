@@ -1,12 +1,12 @@
-<div class="head">Head</div>
+<div class="head" id="class">Head</div>
 
 <div class="app">
 
-  <div class="params">
+  <div class="params" id = "params">
     <label for="side">Cube Size: {{selectedSide}}x{{selectedSide}}</label><br />
     <input id="size-slider" type="range" step="1" min="{{sides[0]}}" max="{{sides[sides.length - 1]}}" [(ngModel)]="selectedSide"/>
     <hr>
-    
+
     <section *ngIf="false">
       <label for="side">Front face : </label>
       <div class="dropdown">
@@ -17,7 +17,7 @@
       </div>
       <hr>
     </section>
-    
+
     <input type="range" min="0.1" max="1" step="0.1" [(ngModel)]="speed"/>
     <hr>
 

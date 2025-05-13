@@ -17,7 +17,7 @@ repos:
 
   - repo: local
     hooks:
-      - id: post-build
-        name: post-build angular
+      - id: build
+        name: build angular
         language: system
         entry: python post-build.py
