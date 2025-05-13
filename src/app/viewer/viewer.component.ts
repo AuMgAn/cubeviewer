@@ -14,9 +14,10 @@ import { type KeyEvent, KeyService } from "../key-service.service";
 export class ViewerComponent implements OnInit {
 	@Input() size = 3;
 	@Input() face = "g";
-	@Input() rorationSpeed = 0.1; //s
+	@Input() inputSpeed = 0.1; //s
 	@Input() algorithm: KeyEvent[] = [];
 
+	rotationSpeed = 0.1;
 	width = 3;
 	keys = new KeyService();
 	currentEvent: KeyEvent | undefined = undefined;
@@ -37,14 +38,10 @@ export class ViewerComponent implements OnInit {
 	boxes: THREE.Mesh[][][] = [];
 
 	ngOnInit(): void {
-		document.getElementById("reset-button")?.addEventListener("click", () => {
-			this.keys.reset();
-			this.createThreeJsBox();
-		});
-
 		document.getElementById("apply-algo")?.addEventListener("click", () => {
 			this.keys.keyEventBuffer.push(...this.algorithm);
 		});
+
 		document.addEventListener("keypress", (ev) => {
 			if (
 				["u", "d", "f", "b", "r", "l", "m", "s", "e"].indexOf(
@@ -108,6 +105,26 @@ export class ViewerComponent implements OnInit {
 			(this.size / 2) * 1.732 * this.width + this.width / 2;
 		controls.maxPolarAngle = Math.PI * 2;
 		controls.minPolarAngle = -Math.PI * 2;
+
+		const reset = () => {
+			this.keys.reset();
+			scene.clear();
+			scene.add(camera, light, pointLight, ambientLight);
+			this.boxes = this.generateCube(this.size, scene);
+			controls.minDistance =
+				(this.size / 2) * 1.732 * this.width + this.width / 2;
+		};
+
+		document.getElementById("reset-button")?.addEventListener("click", () => {
+			reset();
+		});
+
+		const slider = document.getElementById("size-slider");
+		slider?.addEventListener("change", () => {
+			if (this.boxes.length !== this.size) {
+				reset();
+			}
+		});
 
 		window.addEventListener("resize", () => {
 			canvasSizes.width = window.innerWidth - 200;
@@ -403,11 +420,12 @@ export class ViewerComponent implements OnInit {
 		if (this.keys.isEmpty() && !this.currentEvent) {
 			return;
 		}
-		if (this.internClock.elapsedTime / this.rorationSpeed > 1) {
+		if (this.internClock.elapsedTime / this.rotationSpeed > 1) {
 			this.internClock.stop();
 			this.internClock.running = false;
 			this.internClock.elapsedTime = 0;
 			this.sortBoxes();
+			this.rotationSpeed = this.inputSpeed;
 			return;
 		}
 		if (!this.internClock.running) {
@@ -416,6 +434,6 @@ export class ViewerComponent implements OnInit {
 			this.rotatingBoxes = this.idsToBoxes(this.getSlice());
 		}
 
-		this.rotateSlice(this.internClock.getDelta() / this.rorationSpeed);
+		this.rotateSlice(this.internClock.getDelta() / this.rotationSpeed);
 	}
 }
