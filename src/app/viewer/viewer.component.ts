@@ -1,4 +1,4 @@
-import { Component, Input, type OnInit, inject } from "@angular/core";
+import { Component, Input, type OnInit } from "@angular/core";
 
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
@@ -19,7 +19,7 @@ export class ViewerComponent implements OnInit {
 
 	rotationSpeed = 0.1;
 	width = 3;
-	keys: KeyService = inject(KeyService);
+	keys = new KeyService();
 	currentEvent: KeyEvent | undefined = undefined;
 	internClock = new THREE.Clock(false);
 	rotatingBoxes: THREE.Mesh[] = [];
@@ -38,8 +38,17 @@ export class ViewerComponent implements OnInit {
 	boxes: THREE.Mesh[][][] = [];
 
 	ngOnInit(): void {
+		document.getElementById("apply-algo")?.addEventListener("click", () => {
+			this.keys.keyEventBuffer.push(...this.algorithm);
+		});
+
 		document.addEventListener("keypress", (ev) => {
-			if ("udfbrlmsexyz".indexOf(ev.key.toLowerCase(), 0) !== -1) {
+			if (
+				["u", "d", "f", "b", "r", "l", "m", "s", "e"].indexOf(
+					ev.key.toLowerCase(),
+					0,
+				) !== -1
+			) {
 				this.keys.updateKeypress(ev);
 			}
 		});
@@ -96,7 +105,6 @@ export class ViewerComponent implements OnInit {
 			(this.size / 2) * 1.732 * this.width + this.width / 2;
 		controls.maxPolarAngle = Math.PI * 2;
 		controls.minPolarAngle = -Math.PI * 2;
-		controls.saveState();
 
 		const reset = () => {
 			this.keys.reset();
@@ -254,38 +262,28 @@ export class ViewerComponent implements OnInit {
 		}
 	}
 
-	private getSlice(): number[][] {
+	private getSlice(): number[] {
 		switch (this.currentEvent?.key) {
-			case "F":
-				return this.currentEvent.wide
-					? [[this.size - 1, this.size - 2], [], []]
-					: [[this.size - 1], [], []];
-			case "B":
-				return this.currentEvent.wide ? [[0, 1], [], []] : [[0], [], []];
-			case "U":
-				return this.currentEvent.wide
-					? [[], [this.size - 1, this.size - 2], []]
-					: [[], [this.size - 1], []];
-			case "D":
-				return this.currentEvent.wide ? [[], [0, 1], []] : [[], [0], []];
-			case "R":
-				return this.currentEvent.wide
-					? [[], [], [this.size - 1, this.size - 2]]
-					: [[], [], [this.size - 1]];
-			case "L":
-				return this.currentEvent.wide ? [[], [], [0, 1]] : [[], [], [0]];
-			case "M":
-				return [[], [], [1]];
-			case "E":
-				return [[], [1], []];
-			case "S":
-				return [[1], [], []];
-			case "X":
-			case "Y":
-			case "Z":
-				return [[-1], [], []];
+			case "f":
+				return [this.size - 1, -1, -1];
+			case "b":
+				return [0, -1, -1];
+			case "u":
+				return [-1, this.size - 1, -1];
+			case "d":
+				return [-1, 0, -1];
+			case "r":
+				return [-1, -1, this.size - 1];
+			case "l":
+				return [-1, -1, 0];
+			case "m":
+				return [-1, -1, 1];
+			case "e":
+				return [-1, 1, -1];
+			case "s":
+				return [1, -1, -1];
 		}
-		return [[], [], []];
+		return [-1, -1, -1];
 	}
 
 	private getRotationMat(time = 1): [THREE.Matrix4, number] {
@@ -293,52 +291,39 @@ export class ViewerComponent implements OnInit {
 		let angle = 0;
 		const factor = this.currentEvent?.shift ? -1 : 1;
 		switch (this.currentEvent?.key) {
-			case "F":
+			case "f":
 				angle = (-Math.PI / 2) * factor * time;
 				mat.makeRotationZ(angle);
 				break;
-			case "B":
+			case "b":
 				angle = (Math.PI / 2) * factor * time;
 				mat.makeRotationZ(angle);
 				break;
-			case "U":
+			case "u":
 				angle = (-Math.PI / 2) * factor * time;
 				mat.makeRotationY(angle);
 				break;
-			case "D":
+			case "d":
 				angle = (Math.PI / 2) * factor * time;
 				mat.makeRotationY(angle);
 				break;
-			case "R":
+			case "r":
 				angle = (-Math.PI / 2) * factor * time;
 				mat.makeRotationX(angle);
 				break;
-
-			case "L":
+			case "l":
 				angle = (Math.PI / 2) * factor * time;
 				mat.makeRotationX(angle);
 				break;
-			case "M":
+			case "m":
 				angle = (Math.PI / 2) * factor * time;
 				mat.makeRotationX(angle);
 				break;
-			case "E":
+			case "e":
 				angle = (Math.PI / 2) * factor * time;
 				mat.makeRotationY(angle);
 				break;
-			case "S":
-				angle = (-Math.PI / 2) * factor * time;
-				mat.makeRotationZ(angle);
-				break;
-			case "X":
-				angle = (-Math.PI / 2) * factor * time;
-				mat.makeRotationX(angle);
-				break;
-			case "Y":
-				angle = (-Math.PI / 2) * factor * time;
-				mat.makeRotationY(angle);
-				break;
-			case "Z":
+			case "s":
 				angle = (-Math.PI / 2) * factor * time;
 				mat.makeRotationZ(angle);
 				break;
@@ -346,27 +331,20 @@ export class ViewerComponent implements OnInit {
 		return [mat, angle];
 	}
 
-	private idsToBoxes(ids: number[][]): THREE.Mesh[] {
-		const boxBuffer: THREE.Mesh[] = [];
-		if (ids[0].length > 0) {
-			for (const id of ids[0]) {
-				if (id === -1) {
-					return this.boxes.flat().flat();
-				}
-				boxBuffer.push(...this.boxes[id].flat());
-			}
-		} else if (ids[1].length > 0) {
+	private idsToBoxes(ids: number[]): THREE.Mesh[] {
+		let boxBuffer: THREE.Mesh[] = [];
+		if (ids[0] >= 0) {
+			boxBuffer = this.boxes[ids[0]].flat();
+		} else if (ids[1] >= 0) {
 			for (const slice of this.boxes) {
-				for (const id of ids[1]) {
-					boxBuffer.push(...slice[id]);
+				for (const box of slice[ids[1]]) {
+					boxBuffer.push(box);
 				}
 			}
-		} else if (ids[2].length > 0) {
+		} else if (ids[2] >= 0) {
 			for (const slice of this.boxes) {
 				for (const row of slice) {
-					for (const id of ids[2]) {
-						boxBuffer.push(row[id]);
-					}
+					boxBuffer.push(row[ids[2]]);
 				}
 			}
 		}
