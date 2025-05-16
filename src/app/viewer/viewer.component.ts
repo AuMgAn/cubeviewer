@@ -39,12 +39,7 @@ export class ViewerComponent implements OnInit {
 
 	ngOnInit(): void {
 		document.addEventListener("keypress", (ev) => {
-			if (
-				["u", "d", "f", "b", "r", "l", "m", "s", "e"].indexOf(
-					ev.key.toLowerCase(),
-					0,
-				) !== -1
-			) {
+			if ("udfbrlmsexyz".indexOf(ev.key.toLowerCase(), 0) !== -1) {
 				this.keys.updateKeypress(ev);
 			}
 		});
