@@ -105,6 +105,7 @@ export class ViewerComponent implements OnInit {
 			(this.size / 2) * 1.732 * this.width + this.width / 2;
 		controls.maxPolarAngle = Math.PI * 2;
 		controls.minPolarAngle = -Math.PI * 2;
+		controls.saveState();
 
 		const reset = () => {
 			this.keys.reset();

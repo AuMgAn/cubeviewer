@@ -10,6 +10,7 @@ export type AlgoData = { name: string; algo: string; pic: string };
 export class AlgorithmsService {
 	oll: AlgoData[];
 	pll: AlgoData[];
+	selectedAlgo: AlgoData | undefined;
 
 	constructor() {
 		// biome-ignore lint/suspicious/noExplicitAny: disabled until finding viable workaround
@@ -18,5 +19,35 @@ export class AlgorithmsService {
 		const anyPll: any = pllData;
 		this.oll = anyOll.default;
 		this.pll = anyPll.default;
+		this.oll.sort((a, b) => {
+			return Number.parseInt(a.name) - Number.parseInt(b.name);
+		});
+	}
+
+	getAllNames(): string[] {
+		const nameBuffer: string[] = [];
+		for (const alg of this.oll) {
+			nameBuffer.push(alg.name);
+		}
+		for (const alg of this.pll) {
+			nameBuffer.push(alg.name);
+		}
+
+		return nameBuffer;
+	}
+
+	setSelected(alg: string) {
+		let newSelected = this.oll.find((element) => {
+			return element.name === alg;
+		});
+		if (!newSelected) {
+			newSelected = this.pll.find((element) => {
+				return element.name === alg;
+			});
+		}
+		if (!newSelected) {
+			throw new Error("Unreachable");
+		}
+		this.selectedAlgo = newSelected;
 	}
 }

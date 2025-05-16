@@ -6,6 +6,29 @@ button {
     border-radius: 15px;
 }
 
+button :hover {
+  background-color: #0058bd;
+}
+
+button :active {
+  background-color: #1884ff;
+}
+
+.selected {
+  background-color: #BBBBBB;
+}
+
+.not-selected {
+  background-color: #FFFFFF;
+}
+
+.dialog-title {
+  padding-left: 50px;
+  font-weight: bold;
+  font-size: 26px;
+  color: #000000;
+}
+
 /* Style the tab */
 .tab {
   overflow: hidden;
@@ -48,7 +71,7 @@ button {
 }
 
 .algo-row {
-  width: 200px;
+  width: 450px;
 
 }
 

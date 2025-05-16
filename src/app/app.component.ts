@@ -1,6 +1,7 @@
 import { CommonModule } from "@angular/common";
 import { Component, Inject, type OnInit, inject } from "@angular/core";
 import { FormsModule } from "@angular/forms";
+import { AmbientLight } from "three";
 import { DialogAnimationsExample } from "./algo-selection/algo-selection.component";
 import { type AlgoData, AlgorithmsService } from "./algorithms.service";
 import { type KeyEvent, KeyService } from "./key-service.service";
@@ -26,10 +27,16 @@ export class AppComponent implements OnInit {
 	speed = 0.1;
 	rawAlgorithm = "R2U'RU'RUR'UR2UD'RU'R'D";
 	algorithm: KeyEvent[] = [];
-	selectedAlgo: AlgoData | undefined = undefined;
+	algoService: AlgorithmsService = inject(AlgorithmsService);
 
 	ngOnInit(): void {
 		this.setAlgorithm();
+		const button = document.getElementById("open-dialog");
+		if (button) {
+			button.addEventListener("click", () => {
+				this.setEventListener();
+			});
+		}
 	}
 
 	updateFace(newFace: string) {
@@ -40,7 +47,15 @@ export class AppComponent implements OnInit {
 		this.algorithm = KeyService.Algo2KeyEvents(this.rawAlgorithm);
 	}
 
-	openDialog() {
-		console.log("click");
+	setEventListener() {
+		const button = document.getElementById("set-algo");
+		if (button) {
+			button.addEventListener("click", () => {
+				this.rawAlgorithm = this.algoService.selectedAlgo
+					? this.algoService.selectedAlgo.algo
+					: "";
+				this.setAlgorithm();
+			});
+		}
 	}
 }

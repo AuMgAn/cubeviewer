@@ -3,14 +3,11 @@ import { ChangeDetectionStrategy, Component, inject } from "@angular/core";
 import { MatButtonModule } from "@angular/material/button";
 import {
 	MatDialog,
-	MatDialogActions,
-	MatDialogClose,
 	MatDialogContent,
 	MatDialogRef,
-	MatDialogTitle,
 } from "@angular/material/dialog";
 
-import { type AlgoData, AlgorithmsService } from "../algorithms.service";
+import { AlgorithmsService } from "../algorithms.service";
 
 /**
  * @title Dialog Animations
@@ -30,7 +27,7 @@ export class DialogAnimationsExample {
 		exitAnimationDuration: string,
 	): void {
 		this.dialog.open(DialogAnimationsExampleDialog, {
-			width: "250px",
+			width: "500px",
 			enterAnimationDuration,
 			exitAnimationDuration,
 		});
@@ -41,14 +38,7 @@ export class DialogAnimationsExample {
 	selector: "algo-selector-dialog",
 	styleUrl: "algo-selection.scss",
 	templateUrl: "algo-selection-dialog.html",
-	imports: [
-		MatButtonModule,
-		MatDialogActions,
-		MatDialogClose,
-		MatDialogTitle,
-		MatDialogContent,
-		CommonModule,
-	],
+	imports: [MatButtonModule, MatDialogContent, CommonModule],
 	changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DialogAnimationsExampleDialog {
@@ -76,5 +66,9 @@ export class DialogAnimationsExampleDialog {
 			return;
 		}
 		(ev.currentTarget as HTMLElement).className += " active";
+	}
+
+	selectAlg(alg: string) {
+		this.algoSerive.setSelected(alg);
 	}
 }
