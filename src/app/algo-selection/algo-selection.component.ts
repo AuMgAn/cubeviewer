@@ -54,4 +54,27 @@ export class DialogAnimationsExample {
 export class DialogAnimationsExampleDialog {
 	readonly dialogRef = inject(MatDialogRef<DialogAnimationsExampleDialog>);
 	algoSerive: AlgorithmsService = inject(AlgorithmsService);
+
+	openTab(ev: Event, alg_type: string) {
+		const tabcontent = document.getElementsByClassName("tabcontent");
+		for (let i = 0; i < tabcontent.length; i++) {
+			tabcontent[i].setAttribute("style", "none");
+		}
+
+		const tablinks = document.getElementsByClassName("tablinks");
+		for (let i = 0; i < tablinks.length; i++) {
+			tablinks[i].className = tablinks[i].className.replace(" active", "");
+		}
+
+		const selectedTab = document.getElementById(alg_type);
+		if (!selectedTab) {
+			return;
+		}
+		selectedTab.style.display = "block";
+
+		if (!ev.currentTarget) {
+			return;
+		}
+		(ev.currentTarget as HTMLElement).className += " active";
+	}
 }

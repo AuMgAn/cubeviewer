@@ -1,8 +1,40 @@
-<h2 mat-dialog-title>Select algorithm</h2>
+<h2 mat-dialog-title>Select <a href="https://jperm.net/">algorithm</a></h2>
 <mat-dialog-content>
-  <div *ngFor="let alg of algoSerive.oll">
-  {{alg.name}} || <img src="{{alg.pic}}"> || {{alg.algo}}
-</div>
+  <div class="tab">
+    <button id="oll-tab" (click)="openTab($event, 'oll')" class="tablinks active">OLL</button>
+    <button id="pll-tab" (click)="openTab($event, 'pll')" class="tablinks">PLL</button>
+  </div>
+
+  <section class="tabcontent" style="display: block;" id="oll">
+    <div *ngFor="let alg of algoSerive.oll">
+
+      <tr class="first-row">
+        <th class="name-cell" align="left">{{alg.name}}</th>
+        <th class="pic-cell" align="right"><img width="150px" height="150px" src="{{alg.pic}}"></th>
+      </tr>
+      <tr class="algo-row">
+        <th class="algo-cell" colspan="2">{{alg.algo}}</th>
+      </tr>
+
+      <hr>
+    </div>
+  </section>
+
+  <section class="tabcontent" id="pll">
+    <div *ngFor="let alg of algoSerive.pll">
+
+      <tr class="first-row">
+        <th class="name-cell" align="left">{{alg.name}}</th>
+        <th class="pic-cell" align="right"><img width="150px" height="150px" src="{{alg.pic}}"></th>
+      </tr>
+      <tr class="algo-row">
+        <th class="algo-cell" colspan="2">{{alg.algo}}</th>
+      </tr>
+
+      <hr>
+    </div>
+  </section>
+
 </mat-dialog-content>
 <mat-dialog-actions>
   <button mat-dialog-close>No</button>
