@@ -39,6 +39,9 @@
     <button id="reset-button">Reset</button>
     <hr>
 
+    <input type="checkbox" [(ngModel)]="keyboard" (ngModelChange)="updateKeyboard()"><span>Use keyboard input</span>
+    <hr>
+
   </div>
 
   <div class="viewer">

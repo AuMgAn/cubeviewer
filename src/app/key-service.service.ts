@@ -11,6 +11,7 @@ export type KeyEvent = {
 export class KeyService {
 	keyPressed = "";
 	keyEventBuffer: KeyEvent[] = [];
+	keyboard = true;
 
 	reset() {
 		this.keyPressed = "";
@@ -38,6 +39,7 @@ export class KeyService {
 	}
 
 	updateKeypress(event: KeyboardEvent) {
+		if (!this.keyboard) return;
 		const eventKey = this.keyboardEvent2KeyEvent(event);
 		this.keyPressed += eventKey.key.toUpperCase();
 		if (eventKey.shift) {

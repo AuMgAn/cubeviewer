@@ -1,9 +1,8 @@
 import { CommonModule } from "@angular/common";
-import { Component, Inject, type OnInit, inject } from "@angular/core";
+import { Component, type OnInit, inject } from "@angular/core";
 import { FormsModule } from "@angular/forms";
-import { AmbientLight } from "three";
 import { DialogAnimationsExample } from "./algo-selection/algo-selection.component";
-import { type AlgoData, AlgorithmsService } from "./algorithms.service";
+import { AlgorithmsService } from "./algorithms.service";
 import { type KeyEvent, KeyService } from "./key-service.service";
 import { ViewerComponent } from "./viewer/viewer.component";
 
@@ -27,7 +26,9 @@ export class AppComponent implements OnInit {
 	speed = 0.1;
 	rawAlgorithm = "R2U'RU'RUR'UR2UD'RU'R'D";
 	algorithm: KeyEvent[] = [];
+	keys: KeyService = inject(KeyService);
 	algoService: AlgorithmsService = inject(AlgorithmsService);
+	keyboard = true;
 
 	ngOnInit(): void {
 		this.setAlgorithm();
@@ -37,6 +38,10 @@ export class AppComponent implements OnInit {
 				this.setEventListener();
 			});
 		}
+
+		document.getElementById("apply-algo")?.addEventListener("click", () => {
+			this.keys.keyEventBuffer.push(...this.algorithm);
+		});
 	}
 
 	updateFace(newFace: string) {
@@ -57,5 +62,9 @@ export class AppComponent implements OnInit {
 				this.setAlgorithm();
 			});
 		}
+	}
+
+	updateKeyboard() {
+		this.keys.keyboard = this.keyboard;
 	}
 }

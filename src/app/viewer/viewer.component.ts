@@ -1,4 +1,4 @@
-import { Component, Input, type OnInit } from "@angular/core";
+import { Component, Input, type OnInit, inject } from "@angular/core";
 
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
@@ -19,7 +19,7 @@ export class ViewerComponent implements OnInit {
 
 	rotationSpeed = 0.1;
 	width = 3;
-	keys = new KeyService();
+	keys: KeyService = inject(KeyService);
 	currentEvent: KeyEvent | undefined = undefined;
 	internClock = new THREE.Clock(false);
 	rotatingBoxes: THREE.Mesh[] = [];
@@ -38,10 +38,6 @@ export class ViewerComponent implements OnInit {
 	boxes: THREE.Mesh[][][] = [];
 
 	ngOnInit(): void {
-		document.getElementById("apply-algo")?.addEventListener("click", () => {
-			this.keys.keyEventBuffer.push(...this.algorithm);
-		});
-
 		document.addEventListener("keypress", (ev) => {
 			if (
 				["u", "d", "f", "b", "r", "l", "m", "s", "e"].indexOf(
