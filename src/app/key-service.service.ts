@@ -132,7 +132,10 @@ export class KeyService {
 				break;
 			}
 			let wide = false;
-			if (algo[i].toLowerCase() === algo[i]) {
+			if (
+				algo[i].toLowerCase() === algo[i] &&
+				"xyz".indexOf(algo[i].toLowerCase()) === -1
+			) {
 				wide = true;
 			}
 			if (algo[i + 1] === "'") {

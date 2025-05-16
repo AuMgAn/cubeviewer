@@ -285,6 +285,10 @@ export class ViewerComponent implements OnInit {
 				return [[], [1], []];
 			case "S":
 				return [[1], [], []];
+			case "X":
+			case "Y":
+			case "Z":
+				return [[-1], [], []];
 		}
 		return [[], [], []];
 	}
@@ -314,6 +318,7 @@ export class ViewerComponent implements OnInit {
 				angle = (-Math.PI / 2) * factor * time;
 				mat.makeRotationX(angle);
 				break;
+
 			case "L":
 				angle = (Math.PI / 2) * factor * time;
 				mat.makeRotationX(angle);
@@ -330,6 +335,18 @@ export class ViewerComponent implements OnInit {
 				angle = (-Math.PI / 2) * factor * time;
 				mat.makeRotationZ(angle);
 				break;
+			case "X":
+				angle = (-Math.PI / 2) * factor * time;
+				mat.makeRotationX(angle);
+				break;
+			case "Y":
+				angle = (-Math.PI / 2) * factor * time;
+				mat.makeRotationY(angle);
+				break;
+			case "Z":
+				angle = (-Math.PI / 2) * factor * time;
+				mat.makeRotationZ(angle);
+				break;
 		}
 		return [mat, angle];
 	}
@@ -338,6 +355,9 @@ export class ViewerComponent implements OnInit {
 		const boxBuffer: THREE.Mesh[] = [];
 		if (ids[0].length > 0) {
 			for (const id of ids[0]) {
+				if (id === -1) {
+					return this.boxes.flat().flat();
+				}
 				boxBuffer.push(...this.boxes[id].flat());
 			}
 		} else if (ids[1].length > 0) {
