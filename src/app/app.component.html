@@ -33,9 +33,13 @@
     <textarea [(ngModel)]="rawAlgorithm" (change)="setAlgorithm()"class="algorithm-input">
     </textarea>
     <button id="apply-algo">Apply</button>
+    <algo-selector></algo-selector>
     <hr>
 
     <button id="reset-button">Reset</button>
+    <hr>
+
+    <input type="checkbox" [(ngModel)]="keyboard" (ngModelChange)="updateKeyboard()"><span>Use keyboard input</span>
     <hr>
 
   </div>

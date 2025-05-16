@@ -3,6 +3,7 @@ import { Injectable } from "@angular/core";
 export type KeyEvent = {
 	key: string;
 	shift: boolean;
+	wide: boolean;
 };
 
 @Injectable({
@@ -11,6 +12,7 @@ export type KeyEvent = {
 export class KeyService {
 	keyPressed = "";
 	keyEventBuffer: KeyEvent[] = [];
+	keyboard = true;
 
 	reset() {
 		this.keyPressed = "";
@@ -32,14 +34,16 @@ export class KeyService {
 
 	private keyboardEvent2KeyEvent(ev: KeyboardEvent): KeyEvent {
 		return {
-			key: ev.key.toLowerCase(),
+			key: ev.key.toUpperCase(),
 			shift: ev.shiftKey,
+			wide: false,
 		};
 	}
 
 	updateKeypress(event: KeyboardEvent) {
+		if (!this.keyboard) return;
 		const eventKey = this.keyboardEvent2KeyEvent(event);
-		this.keyPressed += eventKey.key.toUpperCase();
+		this.keyPressed += eventKey.key;
 		if (eventKey.shift) {
 			this.keyPressed += "'";
 		}
@@ -121,32 +125,43 @@ export class KeyService {
 		for (let i = 0; i < algo.length; i++) {
 			if (i === algo.length - 1) {
 				keyEventBuffer.push({
-					key: algo[i].toLowerCase(),
+					key: algo[i].toUpperCase(),
 					shift: false,
+					wide: algo[i].toLowerCase() === algo[i],
 				});
 				break;
 			}
-
+			let wide = false;
+			if (
+				algo[i].toLowerCase() === algo[i] &&
+				"xyz".indexOf(algo[i].toLowerCase()) === -1
+			) {
+				wide = true;
+			}
 			if (algo[i + 1] === "'") {
 				keyEventBuffer.push({
-					key: algo[i].toLowerCase(),
+					key: algo[i].toUpperCase(),
 					shift: true,
+					wide: wide,
 				});
 				i++;
 			} else if (algo[i + 1] === "2") {
 				keyEventBuffer.push({
-					key: algo[i].toLowerCase(),
+					key: algo[i].toUpperCase(),
 					shift: false,
+					wide: wide,
 				});
 				keyEventBuffer.push({
-					key: algo[i].toLowerCase(),
+					key: algo[i].toUpperCase(),
 					shift: false,
+					wide: wide,
 				});
 				i++;
 			} else if (algo[i] !== " ") {
 				keyEventBuffer.push({
-					key: algo[i].toLowerCase(),
+					key: algo[i].toUpperCase(),
 					shift: false,
+					wide: wide,
 				});
 			}
 		}
