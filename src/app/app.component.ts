@@ -1,13 +1,19 @@
 import { CommonModule } from "@angular/common";
-import { Component, type OnInit } from "@angular/core";
+import { Component, Inject, type OnInit, inject } from "@angular/core";
 import { FormsModule } from "@angular/forms";
-import { ViewerComponent } from "./viewer/viewer.component";
-
+import { DialogAnimationsExample } from "./algo-selection/algo-selection.component";
+import { type AlgoData, AlgorithmsService } from "./algorithms.service";
 import { type KeyEvent, KeyService } from "./key-service.service";
+import { ViewerComponent } from "./viewer/viewer.component";
 
 @Component({
 	selector: "app-root",
-	imports: [CommonModule, ViewerComponent, FormsModule],
+	imports: [
+		CommonModule,
+		ViewerComponent,
+		FormsModule,
+		DialogAnimationsExample,
+	],
 	templateUrl: "./app.component.html",
 	styleUrl: "./app.component.scss",
 })
@@ -20,6 +26,7 @@ export class AppComponent implements OnInit {
 	speed = 0.1;
 	rawAlgorithm = "R2U'RU'RUR'UR2UD'RU'R'D";
 	algorithm: KeyEvent[] = [];
+	selectedAlgo: AlgoData | undefined = undefined;
 
 	ngOnInit(): void {
 		this.setAlgorithm();
@@ -31,5 +38,9 @@ export class AppComponent implements OnInit {
 
 	setAlgorithm() {
 		this.algorithm = KeyService.Algo2KeyEvents(this.rawAlgorithm);
+	}
+
+	openDialog() {
+		console.log("click");
 	}
 }
